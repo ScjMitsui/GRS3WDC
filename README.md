@@ -45,64 +45,6 @@ python -m experiments.run_all --datasets banknote sonar --n-runs 5
 python -m experiments.generate_figures --datasets banknote sonar
 ```
 
-## Docker
-
-```bash
-docker build -t grs3wdc .
-docker run --rm -v "$(pwd)/results:/app/results" grs3wdc --datasets banknote sonar --n-runs 5
-```
-
-The container's entrypoint is `experiments.run_all`; any of its CLI flags can
-be passed after the image name. Mount `./results` to persist output.
-
-**Note on runtime**: `GRS3WDC-MC` enumerates maximal cliques via NetworkX,
-which does not scale well to large datasets -- the paper itself flags this as
-a limitation. A full `run_all` over all six datasets (including Phishing and
-Letter) at 20 runs can take a long time; use `--datasets`/`--n-runs` to scope
-a demo run.
-
-## Known data caveat
-
-Table 8 reports 2310 instances for Image Segmentation; the local `image.csv`
-has only 210 rows (it matches the small UCI "test" partition only, not the
-combined train+test set used for the paper's reported numbers). Re-fetch the
-full UCI dataset if you need to exactly reproduce that row of Tables 9-10.
-
-## What's in `archive/`
-
-The original project (copied from a Jupyter server) had ~15 notebooks and 6
-near-duplicate model scripts accumulated over a year of experimentation.
-Everything that didn't feed into the paper's final tables was moved here
-as-is, for provenance:
-
-- `archive/notebooks/` -- every original notebook, including the ones that
-  produced Tables 9-10 (`hypertunning.ipynb`, `baseline.ipynb`,
-  `validate_maximal.ipynb`, `validate_neighborhood.ipynb`,
-  `visulization_Untitled.ipynb`) and ones that were abandoned dead ends
-  (`initial.ipynb`, `test.ipynb`, `test_quan.ipynb`, `knntwdnp.ipynb`,
-  `hypertunning-Copy1.ipynb` -- an abandoned weighted-voting granule scheme,
-  `reduced_neighborhood.ipynb` -- an abandoned neighborhood/clique hybrid,
-  `baseline-dl.ipynb` -- a Keras/keras-tuner FCNN baseline never reported in
-  the paper).
-- `archive/legacy_modules/` -- the 6 raw `.py` files (`twdneighborhood.py`,
-  `twdmaximal.py`, `twdnp.py`, `twdmp.py`, `twdnpchev.py`, `twdmpchev.py`)
-  that `src/grs3wdc/granules/*.py` now consolidates into two modules
-  parameterized by `metric=` (euclidean/chebyshev) and `threshold_mode=`
-  (percentile/absolute).
-- `archive/data/` -- datasets that don't appear in Table 8 (`glass.csv`,
-  `glass_o.csv`, `digits.csv`, `shuttle.csv`, `yeast.csv`, `breast_s.csv`,
-  `sonar-Copy1.csv`) plus the original `visulization/` outputs.
-- `archive/kt_tuner_dir/` -- Keras-tuner search cache from the abandoned DL
-  baseline.
-
-One dangling reference worth knowing about: `archive/notebooks/baseline.ipynb`
-imports a `twdgranule` module that no longer exists anywhere in the project
-history we copied. Based on its call signature (`run_model(X_train, y_train,
-X_test, y_test, delta, alpha)`, an absolute delta rather than a percentile),
-it was almost certainly an earlier name for what is now
-`archive/legacy_modules/twdneighborhood.py`, generalized today as
-`src/grs3wdc/granules/neighborhood.py` with `threshold_mode="absolute"`.
-
 ## Implementation note
 
 `neighborhood.py` predicts using a matched granule's **center's own label**,
